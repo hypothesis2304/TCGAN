@@ -53,13 +53,15 @@ class ImageDataset(Dataset):
         self.files_B = sorted(glob.glob(os.path.join(root, '%sB' % mode) + '/*.*'))
 
     def __getitem__(self, index):
-        item_A = self.transform(Image.open(self.files_A[index % len(self.files_A)]))
+        item_A = Image.open(self.files_A[index % len(self.files_A)]).convert('RGB')
+        item_A = self.transform(item_A)
 
         if self.unaligned:
-            item_B = self.transform(Image.open(self.files_B[random.randint(0, len(self.files_B) - 1)]))
+            item_B = Image.open(self.files_B[random.randint(0, len(self.files_B) - 1)]).convert('RGB')
+            item_B = self.transform(item_B)
         else:
-            item_B = self.transform(Image.open(self.files_B[index % len(self.files_B)]))
-
+            item_B = Image.open(self.files_B[index % len(self.files_B)]).convert('RGB')
+            item_B = self.transform(item_B)
         return {'A': item_A, 'B': item_B}
 
     def __len__(self):
