@@ -1,12 +1,10 @@
-import random
-import time
-import datetime
-import sys
-
-from torch.autograd import Variable
 import torch
-# from visdom import Visdom
+from torch.autograd import Variable
 import numpy as np
+import matplotlib.pyplot as plt
+import os
+import imageio
+import random
 
 def tensor2image(tensor):
     image = 127.5*(tensor[0].cpu().float().numpy() + 1.0)
@@ -27,3 +25,20 @@ def hash(domain, inp, bs):
         hashCode = torch.cat((topRows, botRows), 1)
     hashCode = hashCode.unsqueeze(0).repeat(bs,1,1,1)
     return hashCode
+
+def to_np(x):
+    return x.data.cpu().numpy()
+
+
+def to_var(x):
+    if torch.cuda.is_available():
+        x = x.cuda()
+    return Variable(x)
+
+def denorm(x):
+    out = (x + 1) / 2
+    return out.clamp(0, 1)
+
+def show(img):
+    npimg = img.numpy()
+    plt.imshow(np.transpose(npimg, (1, 2, 0)), interpolation='nearest')
