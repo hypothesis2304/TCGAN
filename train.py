@@ -59,13 +59,14 @@ target_fake = Variable(Tensor(batch_size).fill_(0.0), requires_grad=False).to(de
 print("All set, Training Begins!")
 
 transforms_ = [transforms.Resize(256, Image.BILINEAR),
-               transforms.RandomCrop(224),
+               transforms.CenterCrop(224),
                transforms.RandomHorizontalFlip(),
                transforms.ToTensor(),
                transforms.Normalize((0.5,0.5,0.5),(0.5,0.5,0.5))]
 
-dataloader = DataLoader(ImageDataset(data_path, transforms_ = transforms_, unaligned=True), batch_size = batch_size, shuffle=True, num_workers=0)
+dataloader = DataLoader(ImageDataset(data_path, transforms_ = transforms_, unaligned=True), batch_size = batch_size, shuffle=True, num_workers=0, drop_last=True)
 
+print("length: ", len(dataloader)//batch_size)
 
 for epoch in trange(n_epochs, leave=False):
     G_loss = []
@@ -77,6 +78,7 @@ for epoch in trange(n_epochs, leave=False):
     # conditioned text at the end of every batch
     # move data to cuda
     for i, batch in enumerate(dataloader):
+        # print(i)
         realA = batch['A']
         realB = batch['B']
 
@@ -102,10 +104,10 @@ for epoch in trange(n_epochs, leave=False):
         ## source condtion and target condition should be the same
 
         sameA = netG(conditionedA)
-        identityA = identityLoss(sameA, realA)
+        identityA = identityLoss(sameA, realA) * 5.0
 
         sameB = netG(conditionedB)
-        identityB = identityLoss(sameB, realB)
+        identityB = identityLoss(sameB, realB) * 5.0
 
         ## GAN Loss
         ## condition the img from source A to target B
@@ -123,10 +125,10 @@ for epoch in trange(n_epochs, leave=False):
         fakeConditionedB = torch.cat((fakeB, hashB, hashA), 1).to(device)
 
         recoveredA = netG(fakeConditionedB)
-        cycle_lossA = reconstructionLoss(realA, recoveredA)
+        cycle_lossA = reconstructionLoss(realA, recoveredA) * 10.0
 
         recoveredB = netG(fakeConditionedA)
-        cycle_lossB = reconstructionLoss(realB, recoveredB)
+        cycle_lossB = reconstructionLoss(realB, recoveredB) * 10.0
 
         ## Total loss
         G_loss = loss_A2B + loss_B2A + cycle_lossA + cycle_lossB
