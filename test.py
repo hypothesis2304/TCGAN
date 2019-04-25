@@ -47,11 +47,11 @@ if device.type == 'cuda':
     netG.cuda()
     netD.cuda()
 
-netG.load_state_dict(torch.load(model_dir + 'common generator.pkl'))
-netD.load_state_dict(torch.load(model_dir + 'common Discriminator.pkl'))
+netG.load_state_dict(torch.load(model_dir + 'common_generator.pkl'))
+netD.load_state_dict(torch.load(model_dir + 'common_discriminator.pkl'))
 
 
-transforms_ = [transforms.Resize(256, Image.BILINEAR),
+transforms_ = [transforms.Resize(256),
                transforms.RandomCrop(224),
                transforms.RandomHorizontalFlip(),
                transforms.ToTensor(),
@@ -64,23 +64,23 @@ with torch.no_grad():
     for i,batch in enumerate(dataloader):
         realA = batch['A'].to(device)
         realB = batch['B'].to(device)
-        hashB = utils.hash('B', realB, batch_size).to(device)
-        hashA = utils.hash('A', realA, batch_size).to(device)
-        conditionedA = torch.cat((realA, hashA, hashB), 1).to(device)
-        conditionedB = torch.cat((realB, hashB, hashA), 1).to(device)
+        hashBA = utils.hash('B', 'A', realB, batch_size).to(device)
+        hashAB = utils.hash('A', 'B', realA, batch_size).to(device)
+        conditionedAB = torch.cat((realA, hashAB), 1).to(device)
+        conditionedBA = torch.cat((realB, hashBA), 1).to(device)
 
-        fakeB = netG(conditionedA)
-        fakeConditionedB = torch.cat((fakeB, hashB, hashA), 1).to(device)
-        recon_A = netG(fakeConditionedB)
+        fakeB = netG(conditionedAB)
+        fakeConditionedBA = torch.cat((fakeB, hashBA), 1).to(device)
+        recon_A = netG(fakeConditionedBA)
 
         viz1 = realA[0,:,:,:].to('cpu')
         viz = fakeB[0,:,:,:].to('cpu')
         viz2 = recon_A[0,:,:,:].to('cpu')
         break
 
-# plt.imshow(transforms.ToPILImage()(viz2), interpolation="bicubic")
+plt.imshow(transforms.ToPILImage()(viz2), interpolation="bicubic")
 # plt.imshow(transforms.ToPILImage()(viz1), interpolation="bicubic")
-# plt.show()
+plt.show()
 
 
 #     utils.plot_test_results(realA, fakeB, recon_A, i, save=True, save_dir=save_dir + 'AtoB/')
