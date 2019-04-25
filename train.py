@@ -82,20 +82,26 @@ for epoch in trange(n_epochs, leave=False):
         realA = batch['A']
         realB = batch['B']
 
-        hashB = utils.hash('B', realB, batch_size)
-        hashA = utils.hash('A', realA, batch_size)
+        hashAB = utils.hash('A', 'B', realB, batch_size)
+        hashBA = utils.hash('B', 'A', realA, batch_size)
 
-        conditionedA = torch.cat((realA, hashA, hashB), 1)
-        conditionedB = torch.cat((realB, hashB, hashA), 1)
+        hashAA = utils.hash('A', 'A', realA, batch_size)
+        hashBB = utils.hash('B', 'B', realB, batch_size)
+
+        conditionedAB = torch.cat((realA, hashAB), 1)
+        conditionedBA = torch.cat((realB, hashBA), 1)
+
+        conditionedAA = torch.cat((realA, hashAA), 1)
+        conditionedBB = torch.cat((realB, hashBB), 1)
 
         realA = realA.to(device)
         realB = realB.to(device)
 
-        hashA = hashA.to(device)
-        hashB = hashB.to(device)
+        hashAB = hashAB.to(device)
+        hashBA = hashBA.to(device)
 
-        conditionedA = conditionedA.to(device)
-        conditionedB = conditionedB.to(device)
+        conditionedAB = conditionedAB.to(device)
+        conditionedBA = conditionedBA.to(device)
 
         ###############################
         G_optimizer.zero_grad()
@@ -103,31 +109,31 @@ for epoch in trange(n_epochs, leave=False):
         ## from a domain to same domain
         ## source condtion and target condition should be the same
 
-        sameA = netG(conditionedA)
+        sameA = netG(conditionedAA)
         identityA = identityLoss(sameA, realA) * 5.0
 
-        sameB = netG(conditionedB)
+        sameB = netG(conditionedBB)
         identityB = identityLoss(sameB, realB) * 5.0
 
         ## GAN Loss
         ## condition the img from source A to target B
-        fakeB = netG(conditionedA)
+        fakeB = netG(conditionedAB)
         pred_fakeB = netD(fakeB)
         loss_A2B = ganLoss(pred_fakeB, target_real)
 
-        fakeA = netG(conditionedB)
+        fakeA = netG(conditionedBA)
         pred_fakeA = netD(fakeA)
         loss_B2A = ganLoss(pred_fakeA, target_real)
 
         ## Reconstruction loss
 
-        fakeConditionedA = torch.cat((fakeA, hashA, hashB), 1).to(device)
-        fakeConditionedB = torch.cat((fakeB, hashB, hashA), 1).to(device)
+        fakeConditionedAB = torch.cat((fakeA, hashAB), 1).to(device)
+        fakeConditionedBA = torch.cat((fakeB, hashBA), 1).to(device)
 
-        recoveredA = netG(fakeConditionedB)
+        recoveredA = netG(fakeConditionedBA)
         cycle_lossA = reconstructionLoss(realA, recoveredA) * 10.0
 
-        recoveredB = netG(fakeConditionedA)
+        recoveredB = netG(fakeConditionedAB)
         cycle_lossB = reconstructionLoss(realB, recoveredB) * 10.0
 
         ## Total loss
@@ -160,5 +166,5 @@ for epoch in trange(n_epochs, leave=False):
         D_optimizer.step()
 
 print("Finished Training!")
-torch.save(netG.state_dict(), model_dir + 'common generator.pkl')
-torch.save(netD.state_dict(), model_dir + 'common Discriminator.pkl')
+torch.save(netG.state_dict(), model_dir + 'common_generator.pkl')
+torch.save(netD.state_dict(), model_dir + 'common_discriminator.pkl')
