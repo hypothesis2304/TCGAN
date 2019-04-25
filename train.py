@@ -91,8 +91,8 @@ for epoch in trange(n_epochs, leave=False):
         conditionedAB = torch.cat((realA, hashAB), 1)
         conditionedBA = torch.cat((realB, hashBA), 1)
 
-        conditionedAA = torch.cat((realA, hashAA), 1)
-        conditionedBB = torch.cat((realB, hashBB), 1)
+        conditionedAA = torch.cat((realA, hashAA), 1).to(device)
+        conditionedBB = torch.cat((realB, hashBB), 1).to(device)
 
         realA = realA.to(device)
         realB = realB.to(device)
