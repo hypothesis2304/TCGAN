@@ -12,17 +12,26 @@ def tensor2image(tensor):
         image = np.tile(image, (3,1,1))
     return image.astype(np.uint8)
 
-def hash(domain, inp, bs):
+def hash(src, tar, inp, bs):
     dim1 = inp.size(2)
     dim2 = inp.size(3)
-    if domain == 'A':
+    if src == 'A' and tar == 'B':
         topRows = torch.ones((1, dim1//2, dim2))
         botRows = torch.zeros((1, dim1//2, dim2))
         hashCode = torch.cat((topRows, botRows), 1)
-    elif domain == 'B':
+    elif src == 'B' and tar == 'A':
         topRows = torch.zeros((1, dim1//2, dim2))
         botRows = torch.ones((1, dim1//2, dim2))
         hashCode = torch.cat((topRows, botRows), 1)
+    elif src == 'A' and tar == 'A':
+        topRows = torch.ones((1, dim1//2, dim2))
+        botRows = torch.ones((1, dim1//2, dim2))
+        hashCode = torch.cat((topRows, botRows), 1)
+    elif src == 'B' and tar == 'B':
+        topRows = torch.zeros((1, dim1//2, dim2))
+        botRows = torch.zeros((1, dim1//2, dim2))
+        hashCode = torch.cat((topRows, botRows), 1)
+
     hashCode = hashCode.unsqueeze(0).repeat(bs,1,1,1)
     return hashCode
 
